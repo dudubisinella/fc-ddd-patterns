@@ -1,3 +1,9 @@
+import CustomerAddressUpdatedEvent from "../../customer/event/customer-address-updated.event";
+import CustomerCreatedEvent from "../../customer/event/customer-created.event";
+import CustomerAddressUpdatedHandler from "../../customer/event/handler/customer-address-is-updated.handler";
+import Event1CustomerIsCreatedHandler from "../../customer/event/handler/event1-customer-is-created.handler";
+import Event2CustomerIsCreatedHandler from "../../customer/event/handler/event2-customer-is-created.handler";
+import Address from "../../customer/value-object/address";
 import SendEmailWhenProductIsCreatedHandler from "../../product/event/handler/send-email-when-product-is-created.handler";
 import ProductCreatedEvent from "../../product/event/product-created.event";
 import EventDispatcher from "./event-dispatcher";
@@ -78,5 +84,48 @@ describe("Domain events tests", () => {
     eventDispatcher.notify(productCreatedEvent);
 
     expect(spyEventHandler).toHaveBeenCalled();
+  });
+
+  it("should notify customers handlers when customer is created", () => {
+    const eventDispatcher = new EventDispatcher();
+
+    const log1Handler = new Event1CustomerIsCreatedHandler();
+    const log2Handler = new Event2CustomerIsCreatedHandler();
+
+    const spyLog1Handler = jest.spyOn(log1Handler, "handle");
+    const spyLog2Handler = jest.spyOn(log2Handler, "handle");
+
+    eventDispatcher.register("CustomerCreatedEvent", log1Handler);
+    eventDispatcher.register("CustomerCreatedEvent", log2Handler);
+
+    const customerCreatedEvent = new CustomerCreatedEvent({
+      name: "Customer 1",
+      email: "teste@gmail.com",
+    });
+
+    eventDispatcher.notify(customerCreatedEvent);
+
+    expect(spyLog1Handler).toHaveBeenCalledWith(customerCreatedEvent);
+    expect(spyLog2Handler).toHaveBeenCalledWith(customerCreatedEvent);
+  });
+
+  it("should notify customers handlers when customer address is updated", () => {
+    const eventDispatcher = new EventDispatcher();
+
+    const logHandler = new CustomerAddressUpdatedHandler();
+
+    const spyLogHandler = jest.spyOn(logHandler, "handle");
+
+    eventDispatcher.register("CustomerAddressUpdatedEvent", logHandler);
+
+    const customerAddressUpdatedEvent = new CustomerAddressUpdatedEvent({
+      id: 1,
+      name: "Customer 1",
+      address: new Address("Rua 1", 10, "São Leopoldo", "123"),
+    });
+
+    eventDispatcher.notify(customerAddressUpdatedEvent);
+
+    expect(spyLogHandler).toHaveBeenCalledWith(customerAddressUpdatedEvent);
   });
 });
